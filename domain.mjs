@@ -1,0 +1,20 @@
+export const PEOPLE = ['rhian','amanda'];
+export const EXPENSE_CATEGORIES = ['Mercado','Moradia','Delivery','Transporte','Saúde','Lazer','Educação','Assinaturas','Outros'];
+export const INCOME_CATEGORIES = ['Salário','Freelance','Extra','Outros'];
+export function parseMoney(raw) {
+ let s=String(raw??'').trim().replace(/^R\$\s*/,'').replace(/\s/g,'');
+ if(!s||!/^[\d.,]+$/.test(s))throw Error('Informe um valor válido, como 12,50.');
+ if(s.includes(',')) {if(!/^(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}$/.test(s))throw Error('Use até duas casas de centavos.');s=s.replace(/\./g,'').replace(',','.');}
+ else if(s.includes('.')) {if(!/^\d+\.\d{1,2}$/.test(s))throw Error('Use vírgula para centavos; exemplo: 1.234,56.');}
+ else if(!/^\d+$/.test(s))throw Error('Valor inválido.');
+ const cents=Math.round(Number(s)*100);if(!Number.isSafeInteger(cents)||cents<=0||cents>100000000000)throw Error('Informe um valor entre R$ 0,01 e R$ 1 bilhão.');return cents;
+}
+export function localDate(d=new Date()){return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);}
+export function validDate(s){if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;const d=new Date(s+'T12:00:00Z');return !isNaN(d)&&d.toISOString().slice(0,10)===s&&s>='2000-01-01'&&s<='2100-12-31';}
+export function monthShift(date,n){const [y,m,d]=date.split('-').map(Number),t=new Date(Date.UTC(y,m-1+n,1));const last=new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth()+1,0)).getUTCDate();return `${t.getUTCFullYear()}-${String(t.getUTCMonth()+1).padStart(2,'0')}-${String(Math.min(d,last)).padStart(2,'0')}`;}
+export function shares(cents){const rhian=Math.ceil(cents/2);return {rhian,amanda:cents-rhian};}
+export function expandEntry(e,repeat='none',count=1){if(!['none','monthly','installments'].includes(repeat)||!Number.isInteger(count)||count<1||count>36)throw Error('Confira a repetição (até 36 meses).');if(repeat==='none')count=1;if(repeat==='installments'&&e.amount<count)throw Error('O total precisa ter ao menos um centavo por parcela.');return Array.from({length:count},(_,i)=>({...e,id:count===1?e.id:`${e.id}_${i+1}`,date:monthShift(e.date,i),amount:repeat==='installments'?Math.floor(e.amount/count)+(i<e.amount%count?1:0):e.amount,status:i===0?e.status:'planned',description:count>1?`${e.description||e.category} · ${i+1}/${count}`:e.description,series:count>1?e.id:null}));}
+export function attributed(e,person){if(e.scope==='house')return shares(e.amount)[person];return e.owner===person?e.amount:0;}
+export function summarize(entries,person,month){const current=entries.filter(e=>!e.deleted&&e.date.startsWith(month));const paid=current.filter(e=>e.status==='paid');const income=paid.filter(e=>e.type==='income'&&e.owner===person).reduce((s,e)=>s+e.amount,0);const expense=paid.filter(e=>e.type==='expense').reduce((s,e)=>s+attributed(e,person),0);const personal=paid.filter(e=>e.type==='expense'&&e.scope==='personal'&&e.owner===person).reduce((s,e)=>s+e.amount,0);const house=paid.filter(e=>e.type==='expense'&&e.scope==='house').reduce((s,e)=>s+e.amount,0);const upcoming=current.filter(e=>e.type==='expense'&&e.status==='planned').reduce((s,e)=>s+attributed(e,person),0);return {income,expense,personal,house,houseShare:expense-personal,upcoming,result:income-expense};}
+export function settlement(entries){let balance=0,paid={rhian:0,amanda:0},owed={rhian:0,amanda:0};for(const e of entries.filter(e=>!e.deleted&&e.status==='paid')){if(e.type==='expense'&&e.scope==='house'){paid[e.payer]+=e.amount;const s=shares(e.amount);owed.rhian+=s.rhian;owed.amanda+=s.amanda;balance+=(e.payer==='rhian'?e.amount:0)-s.rhian;}if(e.type==='settlement')balance+=e.payer==='rhian'?e.amount:-e.amount;}return {balance,paid,owed,from:balance>0?'amanda':'rhian',to:balance>0?'rhian':'amanda',amount:Math.abs(balance)};}
+export function csv(rows){const quote=v=>'"'+String(v??'').replace(/^[=+@-]/,"'$&").replace(/"/g,'""')+'"';return '\ufeff'+rows.map(r=>r.map(quote).join(';')).join('\r\n');}
