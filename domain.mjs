@@ -1,5 +1,5 @@
 export const PEOPLE = ['rhian','amanda'];
-export const EXPENSE_CATEGORIES = ['Mercado','Moradia','Delivery','Transporte','Saúde','Lazer','Educação','Assinaturas','Outros'];
+export const EXPENSE_CATEGORIES = ['Mercado','Alimentação','Moradia','Transporte','Delivery','Manutenção casa','Saúde e cuidados','Lazer','Educação','Assinaturas','Outros','Saúde'];
 export const INCOME_CATEGORIES = ['Salário','Freelance','Extra','Outros'];
 export function parseMoney(raw) {
  let s=String(raw??'').trim().replace(/^R\$\s*/,'').replace(/\s/g,'');

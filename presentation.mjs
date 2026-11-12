@@ -1,5 +1,5 @@
 import {attributed} from './domain.mjs';
-export const categoryIcons={'Mercado':'basket','Moradia':'home','Delivery':'food','Transporte':'car','Saúde':'health','Lazer':'spark','Educação':'book','Assinaturas':'wallet','Outros':'more','Salário':'briefcase','Freelance':'briefcase','Extra':'spark','Acerto':'split'};
+export const categoryIcons={'Alimentação':'food','Manutenção casa':'home','Saúde e cuidados':'health','Mercado':'basket','Moradia':'home','Delivery':'food','Transporte':'car','Saúde':'health','Lazer':'spark','Educação':'book','Assinaturas':'wallet','Outros':'more','Salário':'briefcase','Freelance':'briefcase','Extra':'spark','Acerto':'split'};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const colors=['#87adfa','#f0b47e','#bfa3ef','#ee9bb1','#86d4bb','#b2c0da'];
 export function categoryTotals(entries,person,context='mine'){const result={};for(const e of entries){if(e.deleted||e.status!=='paid'||e.type!=='expense'||context==='house'&&e.scope!=='house')continue;const n=context==='house'?e.amount:attributed(e,person);if(n)result[e.category]=(result[e.category]||0)+n;}return Object.entries(result).sort((a,b)=>b[1]-a[1]);}
